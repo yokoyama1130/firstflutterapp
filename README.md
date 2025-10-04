@@ -1,8 +1,12 @@
-# test
+# シュミレーター起動
 
-A new Flutter project.
+open -a Simulator
 
-## Getting Started
+## シュミレーターで実行
+
+flutter run -d "iPhone 16 Pro"
+
+# 
 
 This project is a starting point for a Flutter application.
 
