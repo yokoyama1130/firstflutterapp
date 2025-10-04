@@ -1,4 +1,3 @@
-// lib/home_page.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -54,44 +53,57 @@ class HomePage extends StatelessWidget {
       ),
       body: CustomScrollView(
         slivers: [
-          // --- Stories（インスタ風の上部丸アイコン列） ---
+          // --- Stories（オーバーフロー完全対策） ---
           SliverToBoxAdapter(
             child: SizedBox(
-              height: 98,
+              height: 88, // 子に与える高さ: 88 - (padding.vert=8) = 80
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), // 8→4
                 itemCount: 12,
                 separatorBuilder: (_, __) => const SizedBox(width: 14),
                 itemBuilder: (context, index) {
-                  return Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFF58529), Color(0xFFDD2A7B), Color(0xFF8134AF)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                  return SizedBox(
+                    width: 68,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Color(0xFFF58529), Color(0xFFDD2A7B), Color(0xFF8134AF)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            shape: BoxShape.circle,
                           ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: CircleAvatar(
-                          radius: 32,
-                          backgroundColor: Colors.white,
                           child: CircleAvatar(
-                            radius: 30,
-                            backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=${index + 3}'),
+                            radius: 26, // 28→26（外周）
+                            backgroundColor: Colors.white,
+                            child: CircleAvatar(
+                              radius: 24, // 26→24（内側）
+                              backgroundImage:
+                                  NetworkImage('https://i.pravatar.cc/150?img=${index + 3}'),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'user$index',
-                        style: const TextStyle(fontSize: 12),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                        const SizedBox(height: 2), // 6→2
+                        SizedBox(
+                          height: 14, // 固定高さで安定
+                          child: Text(
+                            'user$index',
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 10, // 11→10
+                              height: 1.0,  // 余白を詰める
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),
@@ -148,7 +160,7 @@ class _PostTile extends StatefulWidget {
 class _PostTileState extends State<_PostTile> {
   bool liked = false;
   bool showBigHeart = false;
-  int likeCount = 0;
+  late int likeCount;
 
   @override
   void initState() {
@@ -164,9 +176,7 @@ class _PostTileState extends State<_PostTile> {
       if (fromDoubleTap && liked) {
         showBigHeart = true;
         Future.delayed(const Duration(milliseconds: 700), () {
-          if (mounted) {
-            setState(() => showBigHeart = false);
-          }
+          if (mounted) setState(() => showBigHeart = false);
         });
       }
     });
@@ -181,22 +191,28 @@ class _PostTileState extends State<_PostTile> {
           contentPadding: const EdgeInsets.symmetric(horizontal: 12),
           leading: CircleAvatar(backgroundImage: NetworkImage(widget.avatarUrl)),
           title: Text(widget.displayName, style: const TextStyle(fontWeight: FontWeight.w700)),
-          subtitle: Text('@${widget.username}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          subtitle: Text('@${widget.username}',
+              style: const TextStyle(fontSize: 12, color: Colors.grey)),
           trailing: const Icon(Icons.more_horiz),
         ),
 
-        // --- Image (edge-to-edge, 1:1想定) + double tap like ---
+        // --- Image (edge-to-edge, 1:1) + double tap like ---
         GestureDetector(
           onDoubleTap: () => _toggleLike(fromDoubleTap: true),
           child: Stack(
             alignment: Alignment.center,
             children: [
               AspectRatio(
-                aspectRatio: 1, // 正方形でインスタ風
+                aspectRatio: 1,
                 child: CachedNetworkImage(
                   imageUrl: widget.imageUrl,
                   fit: BoxFit.cover,
-                  placeholder: (c, _) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  placeholder: (c, _) =>
+                      const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  errorWidget: (c, _, __) =>
+                      const Center(child: Icon(Icons.broken_image, size: 48)),
+                  fadeInDuration: const Duration(milliseconds: 180),
+                  fadeOutDuration: const Duration(milliseconds: 120),
                 ),
               ),
               AnimatedOpacity(
@@ -237,10 +253,8 @@ class _PostTileState extends State<_PostTile> {
         // --- Likes count ---
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            'いいね $likeCount 件',
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
+          child: Text('いいね $likeCount 件',
+              style: const TextStyle(fontWeight: FontWeight.w700)),
         ),
         const SizedBox(height: 6),
 
@@ -251,7 +265,9 @@ class _PostTileState extends State<_PostTile> {
             text: TextSpan(
               style: const TextStyle(color: Colors.black, fontSize: 14, height: 1.4),
               children: [
-                TextSpan(text: widget.displayName, style: const TextStyle(fontWeight: FontWeight.w700)),
+                TextSpan(
+                    text: widget.displayName,
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
                 const TextSpan(text: '  '),
                 TextSpan(text: widget.caption),
               ],
@@ -267,17 +283,11 @@ class _PostTileState extends State<_PostTile> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               InkWell(
-                onTap: () {}, // コメント画面へ遷移予定
-                child: const Text(
-                  'コメントを見る',
-                  style: TextStyle(color: Colors.grey),
-                ),
+                onTap: () {},
+                child: const Text('コメントを見る', style: TextStyle(color: Colors.grey)),
               ),
               const SizedBox(height: 4),
-              Text(
-                widget.timeLabel,
-                style: const TextStyle(color: Colors.grey, fontSize: 11),
-              ),
+              Text(widget.timeLabel, style: const TextStyle(color: Colors.grey, fontSize: 11)),
             ],
           ),
         ),
