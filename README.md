@@ -7,7 +7,7 @@ open -a Simulator
 # シュミレーターで実行
 
 ```bash
-flutter run -d "iPhone 16 Pro
+flutter run -d "iPhone 16 Pro"
 ```
 
 # 使ったパッケージ
